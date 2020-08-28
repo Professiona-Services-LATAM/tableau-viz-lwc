@@ -2,10 +2,17 @@
     "packageDirectories": [
         {
             "path": "force-app",
-            "default": true
+            "default": true,
+            "package": "tableau-viz-lwc",
+            "versionName": "Version 1.0",
+            "versionNumber": "1.0.0.NEXT"
         }
     ],
     "namespace": "",
     "sfdcLoginUrl": "https://login.salesforce.com",
-    "sourceApiVersion": "48.0"
+    "sourceApiVersion": "48.0",
+    "packageAliases": {
+        "tableau-viz-lwc": "0Ho6g000000PBGqCAO",
+        "tableau-viz-lwc@1.0.0-1": "04t6g000008asd5AAA"
+    }
 }
