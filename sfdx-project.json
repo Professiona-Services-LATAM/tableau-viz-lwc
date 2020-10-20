@@ -2,10 +2,17 @@
     "packageDirectories": [
         {
             "path": "force-app",
-            "default": true
+            "default": true,
+            "package": "tableauViz",
+            "versionName": "ver 1.0",
+            "versionNumber": "1.0.0.NEXT"
         }
     ],
     "namespace": "",
     "sfdcLoginUrl": "https://login.salesforce.com",
-    "sourceApiVersion": "48.0"
+    "sourceApiVersion": "48.0",
+    "packageAliases": {
+        "tableauViz": "0Ho6g000000PBIhCAO",
+        "tableauViz@1.0.0-1": "04t6g000008av6tAAA"
+    }
 }
