@@ -11,9 +11,6 @@ export default class TableauViz extends LightningElement {
     @api objectApiName;
     @api recordId;
     @api vizUrl;
-    @api hideTabs;
-    @api hideToolbar;
-    @api filterOnRecordId;
     @api height;
     @api tabAdvancedFilter;
     @api sfAdvancedFilter;
@@ -22,6 +19,11 @@ export default class TableauViz extends LightningElement {
     advancedFilterValue;
     errorMessage;
     isLibLoaded = false;
+
+    // Use hashnames for private fields when that is accepted
+    _showTabs = false;
+    _showToolbar = false;
+    _filterOnRecordId = false;
 
     @wire(getRecord, {
         recordId: '$recordId',
@@ -43,6 +45,44 @@ export default class TableauViz extends LightningElement {
                 error
             )}`;
         }
+    }
+
+    // In JavaScript, there are six falsy values:
+    // false, 0, '', null, undefined, and NaN. Everything else is truthy.
+    // LWC can sometimes return 'false' as a string and we need to treat it as false
+    // the !! operator converts any object to Boolean type
+    static booleanNormalize(val) {
+        if (typeof val == 'string' && val.toLowerCase() === 'false') {
+            return false;
+        }
+        return !!val;
+    }
+
+    @api
+    get showTabs() {
+        return this._showTabs;
+    }
+
+    set showTabs(val) {
+        this._showTabs = TableauViz.booleanNormalize(val);
+    }
+
+    @api
+    get showToolbar() {
+        return this._showToolbar;
+    }
+
+    set showToolbar(val) {
+        this._showToolbar = TableauViz.booleanNormalize(val);
+    }
+
+    @api
+    get filterOnRecordId() {
+        return this._filterOnRecordId;
+    }
+
+    set filterOnRecordId(val) {
+        this._filterOnRecordId = TableauViz.booleanNormalize(val);
     }
 
     async connectedCallback() {
@@ -79,12 +119,13 @@ export default class TableauViz extends LightningElement {
         const vizToLoad = new URL(this.vizUrl);
         this.setVizDimensions(vizToLoad, containerDiv);
         this.setVizFilters(vizToLoad);
+        TableauViz.checkForMobileApp(vizToLoad, window.navigator.userAgent);
         const vizURLString = vizToLoad.toString();
 
         // Set viz Options
         const options = {
-            hideTabs: this.hideTabs,
-            hideToolbar: this.hideToolbar,
+            hideTabs: !this.showTabs,
+            hideToolbar: !this.showToolbar,
             height: `${this.height}px`,
             width: '100%'
         };
@@ -105,17 +146,18 @@ export default class TableauViz extends LightningElement {
         try {
             const u = new URL(this.vizUrl);
             if (u.protocol !== 'https:') {
-                throw Error('Viz URL must be HTTPS.');
+                throw Error(
+                    'Invalid URL. Make sure the link to the Tableau view is using HTTPS.'
+                );
             }
 
             if (u.toString().replace(u.origin, '').startsWith('/#/')) {
                 throw Error(
-                    "Viz URL shouldn't have '#' right after the hostname. Removing '#' might make it work."
+                    "Invalid URL. Enter the link for a Tableau view. Click Copy Link to copy the URL from the Share View dialog box in Tableau. The link for the Tableau view must not include a '#' after the name of the server."
                 );
             }
         } catch (error) {
-            this.errorMessage =
-                'Invalid Viz URL' + (error.message ? ': ' + error.message : '');
+            this.errorMessage = error.message ? error.message : 'Invalid URL';
             return false;
         }
 
@@ -125,7 +167,7 @@ export default class TableauViz extends LightningElement {
             (!this.sfAdvancedFilter && this.tabAdvancedFilter)
         ) {
             this.errorMessage =
-                'Advanced filtering requires both Tableau and Salesforce fields.';
+                'Advanced filtering requires that you select both Tableau and Salesforce fields. The fields should represent corresponding data, for example, user or account identifiers.';
             return false;
         }
 
@@ -155,5 +197,56 @@ export default class TableauViz extends LightningElement {
                 this.advancedFilterValue
             );
         }
+    }
+
+    static checkForMobileApp(vizToLoad, userAgent) {
+        const mobileRegex = /SalesforceMobileSDK/g;
+        if (!mobileRegex.test(userAgent)) {
+            return;
+        }
+
+        const deviceIdRegex = /uid_([\w|-]+)/g;
+        const deviceNameRegex = /(iPhone|Android|iPad)/g;
+
+        const deviceIdMatches = deviceIdRegex.exec(userAgent);
+        const deviceId =
+            deviceIdMatches == null
+                ? TableauViz.generateRandomDeviceId()
+                : deviceIdMatches[1];
+        const deviceNameMatches = deviceNameRegex.exec(userAgent);
+        const deviceName =
+            deviceNameMatches == null
+                ? 'SFMobileApp'
+                : `SFMobileApp_${deviceNameMatches[1]}`;
+
+        vizToLoad.searchParams.append(':use_rt', 'y');
+        vizToLoad.searchParams.append(':client_id', 'TableauVizLWC');
+        vizToLoad.searchParams.append(':device_id', deviceId);
+        vizToLoad.searchParams.append(':device_name', deviceName);
+    }
+
+    /* ***********************
+     * This function just needs to generate a random id so that if the user-agent for this mobile device
+     * doesn't contain a uid_ field, we can have a random id that is not likely to collide if the same user logs
+     * in to SF Mobile from a different mobile device that also doesn't have a uid_ field.
+     * ***********************/
+    static generateRandomDeviceId() {
+        function getRandomSymbol(symbol) {
+            var array;
+
+            if (symbol === 'y') {
+                array = ['8', '9', 'a', 'b'];
+                return array[Math.floor(Math.random() * array.length)];
+            }
+
+            array = new Uint8Array(1);
+            window.crypto.getRandomValues(array);
+            return (array[0] % 16).toString(16);
+        }
+
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
+            /[xy]/g,
+            getRandomSymbol
+        );
     }
 }

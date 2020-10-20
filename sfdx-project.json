@@ -3,8 +3,8 @@
         {
             "path": "force-app",
             "default": true,
-            "package": "tableau-viz-lwc",
-            "versionName": "Version 1.0",
+            "package": "tableauViz",
+            "versionName": "ver 1.0",
             "versionNumber": "1.0.0.NEXT"
         }
     ],
@@ -12,7 +12,7 @@
     "sfdcLoginUrl": "https://login.salesforce.com",
     "sourceApiVersion": "48.0",
     "packageAliases": {
-        "tableau-viz-lwc": "0Ho6g000000PBGqCAO",
-        "tableau-viz-lwc@1.0.0-1": "04t6g000008asd5AAA"
+        "tableauViz": "0Ho6g000000PBIhCAO",
+        "tableauViz@1.0.0-1": "04t6g000008av6tAAA"
     }
 }
